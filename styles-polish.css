@@ -162,8 +162,8 @@ button:active:not(:disabled) { transform: none; }
 .preset-chip { padding: 7px 10px; color: #3d4654; font-size: 12px; background: #f7f8fa;
   border: 1px solid #dce1e7; border-radius: 6px; }
 .preset-chip:hover { color: #181a20; background: #fff7d4; border-color: #e9ce60; }
-.language-scroller { max-height: 135px; gap: 9px 8px; scrollbar-color: #b9c0c9 transparent; }
-.lang-choice { color: #29333d; font-size: 12px; gap: 8px; min-height: 22px; }
+.language-scroller { max-height: none; overflow: visible; gap: 8px 8px; }
+.lang-choice { color: #29333d; font-size: 12px; gap: 8px; min-height: 34px; padding: 4px 2px; cursor: pointer; }
 .lang-choice input { accent-color: #d0a600; width: 16px; height: 16px; }
 .compact-group { margin-top: 18px; }
 .translate-actions { margin-top: 17px; }
@@ -285,8 +285,8 @@ button, .btn, .file-label { touch-action: manipulation; }
   .preview-panel, .settings-panel { padding: 18px 16px; }
   .card-heading h2 { font-size: 18px; }
   .section-kicker { font-size: 11px; }
-  .language-scroller { grid-template-columns: repeat(2,minmax(0,1fr)); max-height: 175px; }
-  .lang-choice { min-height: 26px; }
+  .language-scroller { grid-template-columns: repeat(2,minmax(0,1fr)); max-height: none; }
+  .lang-choice { min-height: 40px; }
   .editor-top { padding: 19px 16px; }
   .editor-top-actions { width: 100%; }
   .editor-top-actions .btn { flex: 1; font-size: 12px; padding-inline: 8px; }
@@ -379,3 +379,14 @@ button, .btn, .file-label { touch-action: manipulation; }
 
 .guide-intro-actions { display: flex; flex-wrap: wrap; gap: 9px; flex-shrink: 0; }
 @media(max-width:680px) { .guide-intro-actions .btn { flex:1; } }
+
+/* v1.2.2: each language is a full-row clickable target, without nested scrolling. */
+.language-scroller .lang-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+  font-size: 12px;
+}
+.language-scroller .lang-choice input { flex: 0 0 16px; margin: 0; }
+.language-scroller .lang-choice span { overflow-wrap: anywhere; }

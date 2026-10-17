@@ -1,4 +1,4 @@
-# GlobalSub v1.2.1
+# GlobalSub v1.2.2
 
 **AI 영상 제작자를 위한 개인 API 기반 글로벌 SRT 자막 제작·검수 도구.**
 
@@ -91,3 +91,10 @@ python3 tests/ui_smoke.py
 - Vercel 배포 시 `scripts/build.mjs`가 `VERCEL_PROJECT_PRODUCTION_URL`을 기준으로 `og:image`/`twitter:image`를 절대 URL로 바꾼 정적 `dist/index.html`을 생성합니다. 백엔드는 사용하지 않습니다.
 - 로컬에서 `node scripts/build.mjs`로 테스트할 때 도메인 변수가 없다면 이미지는 상대 경로를 유지합니다. 예: `OG_SITE_URL=https://yourdomain.com node scripts/build.mjs`.
 - 공개 배포 후 미리보기 캐시가 남을 수 있으므로 공유 서비스에서 URL을 새로 검사해 보세요.
+
+## v1.2.2 언어 선택 UI 패치
+
+- 번역 언어 목록의 내부 스크롤 및 높이 제한을 제거하여 모든 언어를 표시합니다.
+- 화면의 일반 스크롤만 사용하도록 변경했습니다.
+- 언어 항목 클릭 영역을 확장하고 모바일 레이아웃을 유지합니다.
+- 기존 번역/백업/OG 이미지 및 Vercel 빌드는 변경하지 않았습니다.
