@@ -1,0 +1,7 @@
+1
+00:00:01,000 --> 00:00:02,900
+This city never sleeps.
+
+2
+00:00:03,100 --> 00:00:05,400
+But every story deserves a new beginning.
