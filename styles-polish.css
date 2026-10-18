@@ -390,3 +390,41 @@ button, .btn, .file-label { touch-action: manipulation; }
 }
 .language-scroller .lang-choice input { flex: 0 0 16px; margin: 0; }
 .language-scroller .lang-choice span { overflow-wrap: anywhere; }
+
+/* v1.2.3 — Korean-first language labels and local drop-to-preview interaction. */
+.language-scroller .lang-choice { align-items: center; min-height: 46px; padding: 5px 3px; gap: 9px; }
+.language-scroller .lang-choice .language-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; line-height: 1.3; }
+.language-scroller .lang-choice .language-ko { font-size: 12px; font-weight: 750; color: #1f2833; overflow-wrap: anywhere; }
+.language-scroller .lang-choice .language-native { font-size: 10px; font-weight: 450; color: #697482; overflow-wrap: anywhere; }
+.language-scroller .lang-choice:hover .language-ko { color: #121a22; }
+.video-box { isolation: isolate; }
+.video-placeholder { appearance: none; border: 1px dashed transparent; border-radius: inherit; cursor: pointer; width: 100%; padding: 28px 20px 24px; background: #10151c; text-align: center; gap: 5px; transition: background .18s,border-color .18s; }
+.video-placeholder:hover { background: #1a222c; border-color: #697481; }
+.video-placeholder:focus-visible { outline: 3px solid #fcd535; outline-offset: -5px; }
+.video-placeholder .preview-art { font-size: clamp(62px,7.8vw,108px); line-height: 1.05; margin: 7px 0; }
+.video-drop-title { display: inline-flex; align-items: center; justify-content: center; gap: 9px; color: #fff; font-size: clamp(12px,1.18vw,15px); font-weight: 730; position: relative; z-index: 1; }
+.video-drop-icon { display: inline-grid; place-items: center; width: 27px; height: 27px; flex-shrink: 0; border-radius: 6px; background: #fcd535; color: #181a20; font-size: 19px; font-weight: 850; line-height: 1; }
+.video-drop-hint { color: #aeb9c8; font-size: 11px; font-weight: 450; position: relative; z-index: 1; }
+.video-box .video-drag-overlay { display: none; position: absolute; inset: 0; z-index: 6; background: #0b0e11ed; border: 3px dashed #fcd535; border-radius: 9px; color: #fff; align-items: center; justify-content: center; flex-direction: column; gap: 9px; pointer-events: none; text-align: center; padding: 22px; }
+.video-box.is-dragover .video-drag-overlay { display: flex; }
+.video-drag-icon { color: #fcd535; font-size: 42px; font-weight: 800; line-height: 1; }
+.video-drag-overlay strong { font-size: 20px; }
+.video-drag-overlay span:last-child { font-size: 12px; color: #b7c3d1; }
+@media (max-width: 680px) {
+  .language-scroller .lang-choice { min-height: 48px; }
+  .video-placeholder { padding: 20px 12px; }
+  .video-placeholder .preview-art { font-size: 66px; margin: 1px 0; }
+  .video-drop-title { font-size: 12px; }
+  .video-drop-hint { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .video-placeholder { transition: none; } }
+@media (max-width: 420px) {
+  .video-placeholder { padding: 12px 10px; gap: 7px; }
+  .video-placeholder .preview-art { display: none; }
+  .video-drop-title { flex-direction: column; gap: 7px; line-height: 1.35; }
+  .video-drop-icon { width: 29px; height: 29px; }
+  .video-drop-hint { max-width: 235px; line-height: 1.3; }
+}
+@media (max-width: 420px) {
+  .video-placeholder .preview-label { display: none; }
+}

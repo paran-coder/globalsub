@@ -1,4 +1,4 @@
-/* GlobalSub v1.2.0 — browser-only application. No application server, analytics or external JS. */
+/* GlobalSub v1.2.3 — browser-only application. No application server, analytics or external JS. */
 (function(){
 'use strict';
 const C=globalThis.GlobalSubCore,SEC=globalThis.GlobalSubSecure,API=globalThis.GlobalSubAPI;
@@ -65,7 +65,7 @@ function bindNav(){all('.side-link').forEach(b=>b.addEventListener('click',()=>s
  $('guideQuick').addEventListener('click',()=>switchView('guide'));
  all('[data-guide-to]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.guideTo)));}
 function makeOption(value,label){const opt=document.createElement('option');opt.value=value;opt.textContent=label;return opt;}
-function addOptions(select,opts){select.replaceChildren();opts.forEach(item=>select.add(makeOption(item.code,item.label)));}
+function addOptions(select,opts){select.replaceChildren();opts.forEach(item=>select.add(makeOption(item.code,item.korean===item.label?item.korean:`${item.korean} · ${item.label}`)));}
 function updateApiStatus(){const el=$('apiStatus');el.textContent=apiKey?'키 사용 중 (연결 미검증)':'API 미연결';el.classList.toggle('online',!!apiKey);$('keyState').textContent=apiKey?'현재 탭 메모리에 키가 있습니다. API 호출 성공 여부는 아직 확인되지 않았습니다.':SEC.hasKey()?'암호화된 키가 저장되어 있습니다. 암호를 입력해 해제할 수 있습니다.':'등록된 키가 없습니다. 기본적으로 키를 저장하지 않습니다.';}
 function currentLanguage(){if(project.activeLanguage===project.sourceLang||!C.LANGUAGES.some(x=>x.code===project.activeLanguage))return project.selectedLanguages[0]||C.LANGUAGES.find(x=>x.code!==project.sourceLang)?.code||'en';return project.activeLanguage;}
 function currentTranslation(){return project.translations[currentLanguage()]||{};}
@@ -73,7 +73,7 @@ function quality(lang=currentLanguage()){const base=C.analyze(project.segments,p
 function renderAll(){
  if(!project.selectedLanguages.length){project.activeLanguage=C.LANGUAGES.find(x=>x.code!==project.sourceLang)?.code||'en';}
  else if(!project.selectedLanguages.includes(project.activeLanguage))project.activeLanguage=project.selectedLanguages[0];
- $('sideProjectName').textContent=project.segments.length?project.name:'새 프로젝트';$('sideProjectMeta').textContent=project.segments.length?`${C.languageName(project.sourceLang)} · ${project.segments.length}개 자막`:'SRT 파일을 불러오세요';
+ $('sideProjectName').textContent=project.segments.length?project.name:'새 프로젝트';$('sideProjectMeta').textContent=project.segments.length?`${C.localizedName(project.sourceLang)} · ${project.segments.length}개 자막`:'SRT 파일을 불러오세요';
  const isDemo=project.name==='미드나잇 시그널';$('projectType').textContent=isDemo?'체험용 샘플 · 실제 작업 파일 아님':project.segments.length?'현재 편집 중인 프로젝트':'새 작업 준비 중 · 파일 미선택';
  $('projectType').classList.toggle('is-demo',isDemo);
  $('statSegments').innerHTML=`${project.segments.length}<span>개 구간</span>`;
@@ -87,7 +87,10 @@ function renderAll(){
 }
 function renderLanguageChoices(){const wrap=$('languageChoices');wrap.replaceChildren();for(const lang of C.LANGUAGES){if(lang.code===project.sourceLang)continue;
  const label=document.createElement('label');label.className='lang-choice';const check=document.createElement('input');check.type='checkbox';check.value=lang.code;check.checked=project.selectedLanguages.includes(lang.code);
- const span=document.createElement('span');span.textContent=lang.label;label.append(check,span);wrap.append(label);
+ const names=document.createElement('span');names.className='language-text';
+ const main=document.createElement('strong');main.className='language-ko';main.textContent=lang.korean;
+ const native=document.createElement('small');native.className='language-native';native.textContent=lang.label;native.dir='auto';
+ names.append(main,native);label.append(check,names);wrap.append(label);
  check.addEventListener('change',()=>{project.selectedLanguages=check.checked?[...new Set([...project.selectedLanguages,lang.code])]:project.selectedLanguages.filter(x=>x!==lang.code);
  if(!project.selectedLanguages.includes(project.activeLanguage))project.activeLanguage=project.selectedLanguages[0]||'en';persist();renderAll();});
  }}
@@ -103,13 +106,13 @@ function translationStats(lang){
 }
 function renderTabs(){const parent=$('editorLanguageTabs');parent.replaceChildren();const options=[...new Set([...project.selectedLanguages,...Object.keys(project.translations)])].filter(x=>x!==project.sourceLang&&C.LANGUAGES.some(l=>l.code===x));
  if(!options.length){const tip=document.createElement('span');tip.className='tab-button';tip.textContent='번역할 언어를 먼저 선택하세요';parent.append(tip);return;}
- for(const code of options){const stats=translationStats(code);const button=document.createElement('button');button.type='button';button.className='tab-button'+(code===currentLanguage()?' selected':'');button.role='tab';button.setAttribute('aria-selected',String(code===currentLanguage()));button.setAttribute('aria-label',`${C.languageName(code)} · ${stats.label} ${stats.done}/${stats.total}`);
- const title=document.createElement('span');title.textContent=C.LANGUAGES.find(x=>x.code===code)?.label||code;
+ for(const code of options){const stats=translationStats(code);const button=document.createElement('button');button.type='button';button.className='tab-button'+(code===currentLanguage()?' selected':'');button.role='tab';button.setAttribute('aria-selected',String(code===currentLanguage()));button.setAttribute('aria-label',`${C.localizedName(code)} · ${stats.label} ${stats.done}/${stats.total}`);
+ const title=document.createElement('span');title.textContent=C.localizedName(code);
  const count=document.createElement('small');count.className='tab-progress '+(stats.label==='완료'?'is-complete':stats.label==='미번역'?'is-empty':'');count.textContent=stats.label;
  button.append(title,count);button.addEventListener('click',()=>{project.activeLanguage=code;persist();renderAll();});parent.append(button);
  }}
 function renderTranslationState(){const el=$('editorTranslationState');const lang=currentLanguage();const {total,done,label}=translationStats(lang);
- el.replaceChildren();const tag=document.createElement('strong');tag.className='translation-state-label';tag.textContent=total?`${C.languageName(lang)} · ${label} ${done}/${total}`:'SRT 원본이 필요합니다';
+ el.replaceChildren();const tag=document.createElement('strong');tag.className='translation-state-label';tag.textContent=total?`${C.localizedName(lang)} · ${label} ${done}/${total}`:'SRT 원본이 필요합니다';
  const info=document.createElement('span');info.textContent=!total?'먼저 SRT 파일을 불러오세요. 언어를 고르는 것만으로 번역되지는 않습니다.':done===total?'이 언어의 모든 자막에 번역문이 있습니다. 내용은 직접 최종 검수하세요.':done?'일부 자막이 비어 있습니다. API 번역을 실행하거나 수동 번역 교환으로 추가하세요.':'아직 이 언어로 번역하지 않았습니다. 자동 번역은 API 키 등록과 번역 실행이 필요합니다.';
  el.append(tag,info);el.classList.toggle('not-translated',!done&&!!total);
 }
@@ -132,7 +135,7 @@ function renderDetail(){const s=project.segments.find(x=>x.id===selectedId)||pro
  if(!s){$('detailTitle').textContent='자막이 없습니다';$('detailTime').textContent='--:--';$('sourceText').value='';$('translatedText').value='';$('emptyTranslationActions').hidden=true;$('reviewBox').textContent='';return;}
  selectedId=s.id;$('detailTitle').textContent=`자막 #${s.id}`;$('detailTime').textContent=`${C.formatTime(s.start)} — ${C.formatTime(s.end)}`;
  $('sourceText').value=s.text;$('translatedText').value=currentTranslation()[s.id]||'';
- $('detailLanguageName').textContent=C.languageName(currentLanguage());$('emptyTranslationActions').hidden=!!currentTranslation()[s.id]?.trim();renderReviewBox(s.id);
+ $('detailLanguageName').textContent=C.localizedName(currentLanguage());$('emptyTranslationActions').hidden=!!currentTranslation()[s.id]?.trim();renderReviewBox(s.id);
 }
 function renderReviewBox(id){const wrap=$('reviewBox');wrap.replaceChildren();const issues=quality().issues.filter(x=>x.id===id);
  if(!issues.length){const ok=document.createElement('span');ok.className='review-good';ok.textContent='✓ 구조 및 길이 검사 통과 (번역의 의미 검수는 별도)';wrap.append(ok);return;}
@@ -162,7 +165,7 @@ function exportAll(){if(!project.segments.length){toast('먼저 SRT 파일을 �
  const langs=Object.keys(project.translations).filter(lang=>lang!==project.sourceLang&&project.segments.every(s=>project.translations[lang]?.[s.id]?.trim()));
  for(const lang of langs)files.push({name:`${stem}.${lang}.srt`,content:'\ufeff'+C.serializeSrt(project.segments,project.translations,lang)});
  if(!langs.length){toast('완성된 번역 언어가 없습니다. 원본 파일만 내보내지 않습니다.',true);return;}
- files.push({name:'README.txt',content:`GlobalSub v1.2.0\n프로젝트: ${project.name}\n원본: ${project.sourceLang}\n번역: ${langs.join(', ')}\n\n각 SRT 파일을 YouTube Studio의 해당 언어 자막으로 직접 업로드해 주세요.\n`});
+ files.push({name:'README.txt',content:`GlobalSub v1.2.3\n프로젝트: ${project.name}\n원본: ${project.sourceLang}\n번역: ${langs.join(', ')}\n\n각 SRT 파일을 YouTube Studio의 해당 언어 자막으로 직접 업로드해 주세요.\n`});
  downloadBytes(`${stem}.subtitles.zip`,C.makeZip(files),'application/zip');toast(`원본 + 완성된 ${langs.length}개 언어를 ZIP으로 저장했습니다.`);
 }
 function backup(){const payload={schema:'globalsub-project',version:'1.0.0',exportedAt:new Date().toISOString(),project};downloadString(`${C.safeFilename(project.name)}.globalsub.json`,JSON.stringify(payload,null,2),'application/json;charset=utf-8');toast('프로젝트 JSON 백업 완료 · API 키와 영상은 제외되었습니다.');}
@@ -215,7 +218,36 @@ function linkFormEvents(){
  $('presetStrip').addEventListener('click',e=>{const b=e.target.closest('[data-preset]');if(b)applyPreset(C.PRESETS[b.dataset.preset]);});
  $('clearLanguages').addEventListener('click',()=>{project.selectedLanguages=[];persist();renderAll();});
  $('savePreset').addEventListener('click',()=>{if(!project.selectedLanguages.length){toast('프리셋을 만들 언어부터 선택하세요.',true);return;}const name=prompt('새 언어 프리셋 이름을 입력하세요 (20자 이내)');if(!name)return;const safe=name.trim().slice(0,20);if(!safe)return;userPresets[safe]=project.selectedLanguages.slice();savePresets();renderPresets();toast(`★ ${safe} 프리셋 저장 완료`);});
- $('videoInput').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;if(!file.type.startsWith('video/')){toast('영상 파일을 선택하세요.',true);return;}if(videoURL)URL.revokeObjectURL(videoURL);videoURL=URL.createObjectURL(file);currentVideo=$('video');currentVideo.src=videoURL;currentVideo.hidden=false;$('videoPlaceholder').hidden=true;$('videoFileName').textContent=file.name;renderVideoSubtitle();});
+ const videoBox=$('videoBox'),videoInput=$('videoInput');
+ function isVideoFile(file){return !!file&&(file.type.startsWith('video/')||(!file.type&&/\.(mp4|webm|mov|m4v|ogv|ogg)$/i.test(file.name)));}
+ function loadVideoFile(file){
+  if(!file)return;
+  if(!isVideoFile(file)){toast('영상 파일만 선택할 수 있습니다. MP4, WebM 등을 확인해 주세요.',true);return;}
+  const nextURL=URL.createObjectURL(file);const oldURL=videoURL;
+  videoURL=nextURL;currentVideo=$('video');currentVideo.pause();currentVideo.src=nextURL;
+  currentVideo.hidden=false;$('videoPlaceholder').hidden=true;$('videoFileName').textContent=file.name;
+  currentVideo.load();renderVideoSubtitle();
+  if(oldURL)URL.revokeObjectURL(oldURL);
+  toast(`${file.name} 영상을 불러왔습니다.`);
+ }
+ videoInput.addEventListener('change',e=>{loadVideoFile(e.target.files?.[0]);videoInput.value='';});
+ $('videoPlaceholder').addEventListener('click',()=>videoInput.click());
+ function hasDraggedFiles(e){return Array.from(e.dataTransfer?.types||[]).includes('Files');}
+ videoBox.addEventListener('dragenter',e=>{if(!hasDraggedFiles(e))return;e.preventDefault();videoBox.classList.add('is-dragover');});
+ videoBox.addEventListener('dragover',e=>{if(!hasDraggedFiles(e))return;e.preventDefault();e.dataTransfer.dropEffect='copy';videoBox.classList.add('is-dragover');});
+ videoBox.addEventListener('dragleave',e=>{const r=videoBox.getBoundingClientRect();if(e.clientX<=r.left||e.clientX>=r.right||e.clientY<=r.top||e.clientY>=r.bottom)videoBox.classList.remove('is-dragover');});
+ videoBox.addEventListener('drop',e=>{
+  if(!hasDraggedFiles(e))return;
+  e.preventDefault();videoBox.classList.remove('is-dragover');
+  const files=Array.from(e.dataTransfer.files||[]);
+  if(files.length!==1){toast('한 번에 영상 파일 하나만 넣어 주세요.',true);return;}
+  loadVideoFile(files[0]);
+ });
+ document.addEventListener('dragover',e=>{if(hasDraggedFiles(e))e.preventDefault();});
+ document.addEventListener('drop',e=>{if(!hasDraggedFiles(e))return;e.preventDefault();videoBox.classList.remove('is-dragover');if(!videoBox.contains(e.target))toast('영상은 미리보기 중앙 영역에 끌어놓아 주세요.',true);});
+ document.addEventListener('dragend',()=>videoBox.classList.remove('is-dragover'));
+ $('video').addEventListener('error',()=>{if(videoURL)toast('이 브라우저에서 해당 영상 코덱을 재생할 수 없습니다. MP4(H.264) 또는 WebM을 권장합니다.',true);});
+ window.addEventListener('beforeunload',()=>{if(videoURL)URL.revokeObjectURL(videoURL);});
  $('video').addEventListener('timeupdate',renderVideoSubtitle);$('video').addEventListener('seeked',renderVideoSubtitle);$('video').addEventListener('play',renderVideoSubtitle);
  $('translateBtn').addEventListener('click',()=>runTranslation());$('cancelTranslate').addEventListener('click',()=>controller?.abort());
  $('downloadCurrent').addEventListener('click',exportCurrent);$('downloadAll').addEventListener('click',exportAll);

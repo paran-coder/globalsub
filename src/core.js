@@ -1,16 +1,17 @@
 /* GlobalSub v1.0.0 — pure client-side subtitle functions (also CommonJS for tests) */
 (function (root) {
   'use strict';
+  // Display names are localized separately from names passed to the translation model.
   const LANGUAGES = [
-    ['ko','한국어','Korean'],['en','English','English'],['ja','日本語','Japanese'],
-    ['zh-CN','简体中文','Simplified Chinese'],['zh-TW','繁體中文','Traditional Chinese'],
-    ['es','Español','Spanish'],['fr','Français','French'],['de','Deutsch','German'],
-    ['it','Italiano','Italian'],['pt-BR','Português (BR)','Brazilian Portuguese'],
-    ['pt-PT','Português (PT)','European Portuguese'],['ru','Русский','Russian'],
-    ['ar','العربية','Arabic'],['hi','हिन्दी','Hindi'],['id','Bahasa Indonesia','Indonesian'],
-    ['th','ไทย','Thai'],['vi','Tiếng Việt','Vietnamese'],['tr','Türkçe','Turkish'],
-    ['pl','Polski','Polish'],['nl','Nederlands','Dutch']
-  ].map(([code,label,english]) => ({code,label,english}));
+    ['ko','한국어','Korean','한국어'],['en','English','English','영어'],['ja','日本語','Japanese','일본어'],
+    ['zh-CN','简体中文','Simplified Chinese','중국어(간체)'],['zh-TW','繁體中文','Traditional Chinese','중국어(번체)'],
+    ['es','Español','Spanish','스페인어'],['fr','Français','French','프랑스어'],['de','Deutsch','German','독일어'],
+    ['it','Italiano','Italian','이탈리아어'],['pt-BR','Português (BR)','Brazilian Portuguese','포르투갈어 (브라질)'],
+    ['pt-PT','Português (PT)','European Portuguese','포르투갈어 (포르투갈)'],['ru','Русский','Russian','러시아어'],
+    ['ar','العربية','Arabic','아랍어'],['hi','हिन्दी','Hindi','힌디어'],['id','Bahasa Indonesia','Indonesian','인도네시아어'],
+    ['th','ไทย','Thai','태국어'],['vi','Tiếng Việt','Vietnamese','베트남어'],['tr','Türkçe','Turkish','튀르키예어'],
+    ['pl','Polski','Polish','폴란드어'],['nl','Nederlands','Dutch','네덜란드어']
+  ].map(([code,label,english,korean]) => ({code,label,english,korean}));
   const PRESETS = {
     '글로벌 5개': ['en','ja','es','fr','de'],
     '아시아 5개': ['ko','ja','zh-CN','zh-TW','vi'],
@@ -57,6 +58,7 @@
     return {segments,errors};
   }
   function languageName(code) { return LANGUAGES.find(x=>x.code===code)?.english||code; }
+  function localizedName(code) { return LANGUAGES.find(x=>x.code===code)?.korean||code; }
   function detectLanguage(segments) {
     const text=segments.map(x=>x.text).join(' ').slice(0,3000);
     if (!text) return 'en';
@@ -171,7 +173,7 @@
       translations:{en:{'1':'I never thought I’d see you here.','2':'If we don’t leave now, it’ll be too late.','3':'This is our last chance. Take my hand.','4':'We can do it if we stick together.'},ja:{'1':'ここで君に会うとは思わなかった。','2':'今出ないと手遅れになる。','3':'最後のチャンスだ。手をつないで。','4':'一緒ならきっとできる。'}},
       selectedLanguages:['en','ja','es','fr','de'],activeLanguage:'en',staleTranslations:{},style:'시네마틱 드라마: 감정과 인물의 말투를 살려 자연스럽게',glossary:'',updatedAt:Date.now()};
   }
-  const api={LANGUAGES,PRESETS,parseTime,formatTime,parseSrt,languageName,detectLanguage,serializeSrt,analyze,parseTranslationJson,buildPrompt,makeZip,safeFilename,makeDemoProject};
+  const api={LANGUAGES,PRESETS,parseTime,formatTime,parseSrt,languageName,localizedName,detectLanguage,serializeSrt,analyze,parseTranslationJson,buildPrompt,makeZip,safeFilename,makeDemoProject};
   if(typeof module==='object'&&module.exports) module.exports=api;
   root.GlobalSubCore=api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
