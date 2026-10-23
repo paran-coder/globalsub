@@ -24,3 +24,15 @@ test('opt-in AES-GCM encrypted key can be unlocked, never stores plaintext',asyn
 test('encryption rejects weak passphrase',async()=>{
  const {sec}=createContext();await assert.rejects(()=>sec.saveKey('sk-test','short'),/8자/);
 });
+
+test('Gemini key encryption is isolated from legacy OpenAI storage',async()=>{
+ const {sec,storage}=createContext();
+ await sec.saveKey('openai-secret-demo','openai-pass-demo');
+ await sec.saveKey('gemini-secret-demo','gemini-pass-demo','gemini');
+ assert.equal(sec.hasKey(),true);assert.equal(sec.hasKey('gemini'),true);
+ assert.equal(storage.size,2);
+ assert.equal(await sec.loadKey('openai-pass-demo'),'openai-secret-demo');
+ assert.equal(await sec.loadKey('gemini-pass-demo','gemini'),'gemini-secret-demo');
+ assert.doesNotMatch([...storage.values()].join(''),/gemini-secret-demo|openai-secret-demo/);
+ sec.clearKey('gemini');assert.equal(sec.hasKey('gemini'),false);assert.equal(sec.hasKey(),true);
+});

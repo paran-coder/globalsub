@@ -1,4 +1,4 @@
-"""Chromium UI test for GlobalSub v1.2.3.
+"""Chromium UI test for GlobalSub v1.3.0.
 Does not call the paid OpenAI API; tests browser-only interactions, layout and backups.
 """
 from pathlib import Path
@@ -25,7 +25,7 @@ def initialize(page, persisted=None):
     }''', persisted or {})
     page.add_style_tag(content=(ROOT/'styles.css').read_text(encoding='utf-8'))
     page.add_style_tag(content=(ROOT/'styles-polish.css').read_text(encoding='utf-8'))
-    for src in ['src/core.js','src/secure.js','src/api.js','app.js']:
+    for src in ['src/core.js','src/secure.js','src/api.js','src/gemini.js','app.js']:
         page.evaluate((ROOT/src).read_text(encoding='utf-8'))
 
 
@@ -149,8 +149,8 @@ def main():
             assert not mobile.evaluate('document.documentElement.scrollWidth > innerWidth'),f'guide overflow at {width}px'
             mobile.close()
         assert not errors,errors
-        page.screenshot(path=str(ROOT/'v1.2.3-desktop.png'),full_page=True)
+        page.screenshot(path=str(ROOT/'v1.3.0-desktop.png'),full_page=True)
         browser.close()
-        print('PASS: 1.2.3 Korean language labels / preview click / video drop / blank start / demo / 44px restore / translation state / guide / manual JSON / ZIP / backup / responsive')
+        print('PASS: 1.3.0 Korean language labels / preview click / video drop / blank start / demo / 44px restore / translation state / guide / manual JSON / ZIP / backup / responsive')
 
 if __name__=='__main__': main()
