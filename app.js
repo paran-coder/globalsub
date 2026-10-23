@@ -1,4 +1,4 @@
-/* GlobalSub v1.3.0 — browser-only application. No application server, analytics or external JS. */
+/* GlobalSub v1.3.1 — browser-only application. No application server, analytics or external JS. */
 (function(){
 'use strict';
 const C=globalThis.GlobalSubCore,SEC=globalThis.GlobalSubSecure,API=globalThis.GlobalSubAPI,GEMINI=globalThis.GlobalSubGemini;
@@ -70,7 +70,9 @@ function addOptions(select,opts){select.replaceChildren();opts.forEach(item=>sel
 function activeApiKey(){return provider==='gemini'?geminiKey:apiKey;}
 function updateApiStatus(){
  const active=activeApiKey(),el=$('apiStatus');
- el.textContent=active?`${provider==='gemini'?'Gemini':'OpenAI'} 키 사용 중 (연결 미검증)`:`${provider==='gemini'?'Gemini':'OpenAI'} API 미연결`;
+ const providerName=provider==='gemini'?'Gemini':'OpenAI';
+ const savedKey=SEC.hasKey(provider);
+ el.textContent=active?`${providerName} 키 등록됨 · 연결 미검증`:savedKey?`${providerName} 키 잠김 · 잠금 해제 필요`:`${providerName} 키 미등록`;
  el.classList.toggle('online',!!active);
  $('keyState').textContent=apiKey?'현재 탭 메모리에 OpenAI 키가 있습니다. 연결 상태는 번역 시 확인됩니다.':SEC.hasKey()?'암호화된 OpenAI 키가 저장되어 있습니다.':'OpenAI 키가 등록되지 않았습니다.';
  $('geminiKeyState').textContent=geminiKey?'현재 탭 메모리에 Gemini 키가 있습니다. 연결 상태는 번역 시 확인됩니다.':SEC.hasKey('gemini')?'암호화된 Gemini 키가 저장되어 있습니다.':'Gemini 키가 등록되지 않았습니다.';
@@ -174,6 +176,16 @@ function renderSettings(){
  $('qualityModel').value=provider==='gemini'?models.geminiQuality:models.quality;
  $('glossary').value=project.glossary;
  updateApiStatus();
+}
+// Selecting or unlocking a provider's key makes that provider the active translation engine.
+// Preserve unsaved model/glossary input in Settings when switching providers.
+function selectProvider(next){
+ const draft=$('glossary').value;
+ storeModelInputs();
+ provider=next==='gemini'?'gemini':'openai';
+ try{localStorage.setItem(PROVIDER_KEY,JSON.stringify(provider));}catch{}
+ renderSettings();
+ $('glossary').value=draft;
 }
 function downloadBytes(filename,bytes,mime){const blob=new Blob([bytes],{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function downloadString(name,content,mime='text/plain;charset=utf-8'){downloadBytes(name,new TextEncoder().encode(content),mime);}
@@ -287,23 +299,18 @@ function linkFormEvents(){
  $('applyManual').addEventListener('click',()=>{const lang=$('manualLanguage').value,expected=manualSegmentBatch().map(s=>s.id);try{if(!expected.length)throw new Error('번역할 자막이 없습니다.');const map=C.parseTranslationJson($('manualResult').value,expected,false);if(!Object.keys(map).length)throw new Error('적용할 번역이 없습니다.');project.translations[lang] ||= {};Object.assign(project.translations[lang],map);project.staleTranslations[lang] ||= {};for(const id of Object.keys(map))delete project.staleTranslations[lang][id];
   if(!project.selectedLanguages.includes(lang))project.selectedLanguages.push(lang);project.activeLanguage=lang;persist();renderAll();toast(`${Object.keys(map).length}개 자막을 적용했습니다. 누락된 번역은 검수 알림에 표시됩니다.`);switchView('studio');}catch(e){toast(e.message,true);}});
  $('toggleKey').addEventListener('click',()=>{$('apiKeyInput').type=$('apiKeyInput').type==='password'?'text':'password';$('toggleKey').textContent=$('apiKeyInput').type==='password'?'보기':'숨기기';});
- $('applyKey').addEventListener('click',()=>{const value=$('apiKeyInput').value.trim();if(!value||value.length<15){toast('API 키를 정확히 입력하세요.',true);return;}apiKey=value;$('apiKeyInput').value='';updateApiStatus();toast('API 키가 현재 탭 메모리에 설정됐습니다. 실제 API 연결은 번역 시 확인됩니다.');});
+ $('applyKey').addEventListener('click',()=>{const value=$('apiKeyInput').value.trim();if(!value||value.length<15){toast('API 키를 정확히 입력하세요.',true);return;}apiKey=value;$('apiKeyInput').value='';selectProvider('openai');toast('OpenAI 키를 등록하고 번역 엔진을 OpenAI로 선택했습니다. 실제 연결은 번역 시 검증됩니다.');});
  $('forgetKey').addEventListener('click',()=>{apiKey='';$('apiKeyInput').value='';updateApiStatus();toast('메모리에 있던 API 키를 잠갔습니다. 암호화된 저장본은 유지됩니다.');});
- $('encryptKey').addEventListener('click',async()=>{try{const key=apiKey||$('apiKeyInput').value.trim();if(!key)throw new Error('저장할 API 키가 없습니다. 먼저 키를 입력하세요.');await SEC.saveKey(key,$('secretPassword').value);$('secretPassword').value='';updateApiStatus();toast('API 키가 이 브라우저에 암호화 저장됐습니다.');}catch(e){toast(e.message,true);}});
- $('unlockKey').addEventListener('click',async()=>{try{apiKey=await SEC.loadKey($('secretPassword').value);$('secretPassword').value='';updateApiStatus();toast('저장된 API 키의 잠금이 해제됐습니다.');}catch(e){toast(e.message,true);}});
+ $('encryptKey').addEventListener('click',async()=>{try{const key=apiKey||$('apiKeyInput').value.trim();if(!key)throw new Error('저장할 API 키가 없습니다. 먼저 키를 입력하세요.');await SEC.saveKey(key,$('secretPassword').value);apiKey=key;$('apiKeyInput').value='';$('secretPassword').value='';selectProvider('openai');toast('OpenAI 키를 암호화 저장하고 현재 탭에서 사용하도록 설정했습니다.');}catch(e){toast(e.message,true);}});
+ $('unlockKey').addEventListener('click',async()=>{try{apiKey=await SEC.loadKey($('secretPassword').value);$('secretPassword').value='';selectProvider('openai');toast('OpenAI 키를 잠금 해제하고 OpenAI 번역 엔진을 선택했습니다.');}catch(e){toast(e.message,true);}});
  $('clearSavedKey').addEventListener('click',async()=>{if(!await confirmDialog('암호화 저장본 삭제','브라우저에 저장된 암호화 API 키를 삭제합니다. 현재 탭의 메모리 키는 유지됩니다.','저장본 삭제'))return;SEC.clearKey();updateApiStatus();toast('암호화 저장본이 삭제됐습니다.');});
  // Gemini keys are managed independently and never included in project backups.
- $('providerSelect').addEventListener('change',()=>{
-   const glossaryDraft=$('glossary').value;
-   storeModelInputs();provider=$('providerSelect').value==='gemini'?'gemini':'openai';
-   try{localStorage.setItem(PROVIDER_KEY,JSON.stringify(provider));}catch{}
-   renderSettings();$('glossary').value=glossaryDraft;
- });
+ $('providerSelect').addEventListener('change',()=>selectProvider($('providerSelect').value));
  $('geminiToggleKey').addEventListener('click',()=>{$('geminiKeyInput').type=$('geminiKeyInput').type==='password'?'text':'password';$('geminiToggleKey').textContent=$('geminiKeyInput').type==='password'?'보기':'숨기기';});
- $('geminiApplyKey').addEventListener('click',()=>{const value=$('geminiKeyInput').value.trim();if(value.length<15){toast('Gemini API 키를 정확히 입력하세요.',true);return;}geminiKey=value;$('geminiKeyInput').value='';updateApiStatus();toast('Gemini 키가 현재 탭에 설정됐습니다. 연결 성공은 실제 번역 시 확인됩니다.');});
+ $('geminiApplyKey').addEventListener('click',()=>{const value=$('geminiKeyInput').value.trim();if(value.length<15){toast('Gemini API 키를 정확히 입력하세요.',true);return;}geminiKey=value;$('geminiKeyInput').value='';selectProvider('gemini');toast('Gemini 키를 등록하고 번역 엔진을 Gemini로 선택했습니다. 실제 연결은 번역 시 검증됩니다.');});
  $('geminiForgetKey').addEventListener('click',()=>{geminiKey='';$('geminiKeyInput').value='';updateApiStatus();toast('Gemini 메모리 키가 잠겼습니다.');});
- $('geminiEncryptKey').addEventListener('click',async()=>{try{const key=geminiKey||$('geminiKeyInput').value.trim();if(!key)throw new Error('저장할 Gemini API 키가 없습니다.');await SEC.saveKey(key,$('geminiPassword').value,'gemini');$('geminiPassword').value='';updateApiStatus();toast('Gemini 키를 브라우저에 암호화 저장했습니다.');}catch(e){toast(e.message,true);}});
- $('geminiUnlockKey').addEventListener('click',async()=>{try{geminiKey=await SEC.loadKey($('geminiPassword').value,'gemini');$('geminiPassword').value='';updateApiStatus();toast('Gemini 키 잠금을 해제했습니다.');}catch(e){toast(e.message,true);}});
+ $('geminiEncryptKey').addEventListener('click',async()=>{try{const key=geminiKey||$('geminiKeyInput').value.trim();if(!key)throw new Error('저장할 Gemini API 키가 없습니다.');await SEC.saveKey(key,$('geminiPassword').value,'gemini');geminiKey=key;$('geminiKeyInput').value='';$('geminiPassword').value='';selectProvider('gemini');toast('Gemini 키를 암호화 저장하고 현재 탭에서 사용하도록 설정했습니다.');}catch(e){toast(e.message,true);}});
+ $('geminiUnlockKey').addEventListener('click',async()=>{try{geminiKey=await SEC.loadKey($('geminiPassword').value,'gemini');$('geminiPassword').value='';selectProvider('gemini');toast('Gemini 키를 잠금 해제하고 Gemini 번역 엔진을 선택했습니다.');}catch(e){toast(e.message,true);}});
  $('geminiClearSavedKey').addEventListener('click',async()=>{if(!await confirmDialog('Gemini 저장본 삭제','Gemini 키의 암호화 저장본만 삭제합니다. 메모리에 있는 키는 유지됩니다.','삭제'))return;SEC.clearKey('gemini');updateApiStatus();toast('Gemini 키 저장본을 삭제했습니다.');});
  $('saveSettings').addEventListener('click',()=>{storeModelInputs();project.glossary=$('glossary').value;try{localStorage.setItem(MODELS_KEY,JSON.stringify(models));}catch{}persist();toast('선택한 AI의 번역 모델과 용어 설정을 저장했습니다.');});
  $('resetProject').addEventListener('click',startFreshProject);

@@ -1,4 +1,4 @@
-# GlobalSub-v1.3.0 Context Notes
+# GlobalSub-v1.3.1 Context Notes
 
 ## 기준
 - v1.2.3 Vercel-ready 배포본에서 시작합니다.
@@ -17,3 +17,7 @@
 - 기존 OpenAI 경로 불변, SRT 타임코드 불변, 성공한 배치만 반영.
 - Gemini JSON 스키마 응답에서 ID 정확히 1회씩 반환할 때만 번역 적용.
 - 키별 보관/해제/삭제 독립성 및 Vercel CSP 업데이트.
+
+## v1.3.1 원인/수정
+- Gemini 키 등록만으로 기존 제공자(OpenAI)가 유지되어 Gemini 키를 입력했어도 OpenAI 키를 요구하던 UX 오류 수정.
+- 개인 키는 여전히 브라우저에서만 보관합니다. API 실통신 검증과 키 등록은 별개입니다.

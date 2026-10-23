@@ -13,12 +13,16 @@ with sync_playwright() as p:
     page.on('pageerror',lambda err:errors.append(str(err)))
     initialize(page)
     page.locator('#settingsQuick').click()
-    page.locator('#providerSelect').select_option('gemini')
-    assert page.locator('#economyModel').input_value()=='gemini-3.5-flash-lite'
-    assert page.locator('#qualityModel').input_value()=='gemini-3.8-flash'
+    # Regression: entering Gemini key MUST switch provider away from default OpenAI.
+    assert page.locator('#providerSelect').input_value()=='openai'
+    assert 'OpenAI 키 미등록' in page.locator('#apiStatus').inner_text()
     page.locator('#geminiKeyInput').fill('fake-gemini-key-000000000')
     page.locator('#geminiApplyKey').click()
-    assert 'Gemini 키 사용 중' in page.locator('#apiStatus').inner_text()
+    assert page.locator('#providerSelect').input_value()=='gemini'
+    assert page.evaluate('JSON.parse(__store.get("globalsub_v1_provider"))')=='gemini'
+    assert 'Gemini 키 등록됨' in page.locator('#apiStatus').inner_text()
+    assert page.locator('#economyModel').input_value()=='gemini-3.5-flash-lite'
+    assert page.locator('#qualityModel').input_value()=='gemini-3.8-flash'
     page.locator('#saveSettings').click()
     page.evaluate('''() => {
       window.__geminiRequests=[];
@@ -56,8 +60,8 @@ with sync_playwright() as p:
     page.locator('#settingsQuick').click()
     page.locator('#providerSelect').select_option('openai')
     assert page.locator('#economyModel').input_value()=='gpt-4.1-mini'
-    assert 'OpenAI API 미연결' in page.locator('#apiStatus').inner_text()
+    assert 'OpenAI 키 미등록' in page.locator('#apiStatus').inner_text()
     assert 'fake-gemini-key-000000000' not in json.dumps(page.evaluate('Object.fromEntries(__store)'))
     assert not errors,errors
     b.close()
-    print('PASS: Gemini provider switch / model defaults / user key / direct mock translation / ID matching / key isolation / backups')
+    print('PASS: Gemini automatic provider selection / model defaults / user key / direct mock translation / ID matching / key isolation / backups')
